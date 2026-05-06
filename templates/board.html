@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Board | Доска</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f2f5;
+            padding: 20px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+      
+        .header {
+            background: white;
+            border-radius: 15px;
+            padding: 20px 25px;
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .header h1 {
+            font-size: 1.8rem;
+            color: #333;
+        }
+        .header h1 span {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .back-link {
+            color: #667eea;
+            text-decoration: none;
+        }
+      
+        .stats {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 15px 25px;
+            flex: 1;
+            min-width: 110px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+        .stat-label { color: #666; font-size: 0.8rem; margin-top: 5px; }
+        .stat-card.total .stat-number { color: #667eea; }
+        .stat-card.pending .stat-number { color: #f59e0b; }
+        .stat-card.progress .stat-number { color: #3b82f6; }
+        .stat-card.completed .stat-number { color: #10b981; }
+        
+        .add-form {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 25px;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .add-form input, .add-form select {
+            padding: 12px 15px;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 14px;
+        }
+        .add-form input { flex: 2; min-width: 200px; }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        
+        .columns {
+            display: flex;
+            gap: 20px;
+            overflow-x: auto;
+        }
+        .column {
+            flex: 1;
+            min-width: 320px;
+            background: #f8fafc;
+            border-radius: 15px;
+            padding: 15px;
+        }
+        .column-header {
+            font-size: 1.2rem;
+            font-weight: 600;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .column-header.pending { background: #fef3c7; color: #d97706; }
+        .column-header.progress { background: #dbeafe; color: #2563eb; }
+        .column-header.completed { background: #d1fae5; color: #059669; }
+        
+        .task-card {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 12px;
+            border: 1px solid #e2e8f0;
+        }
+        .task-title { font-weight: 600; margin-bottom: 6px; color: #1e293b; }
+        .task-desc { font-size: 0.8rem; color: #64748b; margin-bottom: 10px; }
+        .task-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .priority {
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+        .priority.high { background: #fee2e2; color: #dc2626; }
+        .priority.medium { background: #fed7aa; color: #ea580c; }
+        .priority.low { background: #dcfce7; color: #16a34a; }
+        .task-actions { display: flex; gap: 8px; }
+        .status-select {
+            padding: 5px 8px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            font-size: 0.7rem;
+            width: 100%;
+        }
+        .btn-icon {
+            padding: 5px 10px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-edit { background: #e0e7ff; color: #4f46e5; }
+        .btn-delete { background: #fee2e2; color: #dc2626; }
+        
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal.active { display: flex; }
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            width: 450px;
+        }
+        .modal-content input, .modal-content select {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+        }
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            justify-content: flex-end;
+        }
+        .empty-state { text-align: center; padding: 40px; color: #94a3b8; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <a href="/" class="back-link">← На главную</a>
+                <h1>📌 <span>Task Board</span></h1>
+            </div>
+        </div>
+        
+        <div class="stats">
+            <div class="stat-card total">
+                <div class="stat-number">{{ stats.total }}</div>
+                <div class="stat-label">Всего</div>
+            </div>
+            <div class="stat-card pending">
+                <div class="stat-number">{{ stats.pending }}</div>
+                <div class="stat-label">Ожидает</div>
+            </div>
+            <div class="stat-card progress">
+                <div class="stat-number">{{ stats.in_progress }}</div>
+                <div class="stat-label">В работе</div>
+            </div>
+            <div class="stat-card completed">
+                <div class="stat-number">{{ stats.completed }}</div>
+                <div class="stat-label">Завершено</div>
+            </div>
+        </div>
+        
+        <form class="add-form" action="/task/create" method="post">
+            <input type="text" name="title" placeholder="Название задачи" required>
+            <input type="text" name="description" placeholder="Описание">
+            <select name="priority">
+                <option value="low">🟢 Низкий</option>
+                <option value="medium" selected>🟠 Средний</option>
+                <option value="high">🔴 Высокий</option>
+            </select>
+            <button type="submit" class="btn-primary">➕ Добавить</button>
+        </form>
+        
+        <div class="columns">
+            <div class="column">
+                <div class="column-header pending">⏳ Ожидает</div>
+                {% for task in tasks if task.status == 'pending' %}
+                <div class="task-card">
+                    <div class="task-title">{{ task.title }}</div>
+                    <div class="task-desc">{{ task.description or '—' }}</div>
+                    <div class="task-meta">
+                        <span class="priority {{ task.priority }}">
+                            {% if task.priority == 'high' %}🔴 Высокий
+                            {% elif task.priority == 'medium' %}🟠 Средний
+                            {% else %}🟢 Низкий{% endif %}
+                        </span>
+                        <div class="task-actions">
+                            <a href="/task/{{ task.id }}/edit" class="btn-icon btn-edit">✏️</a>
+                            <form action="/task/{{ task.id }}/delete" method="post" style="display: inline;">
+                                <button type="submit" class="btn-icon btn-delete" onclick="return confirm('Удалить?')">🗑️</button>
+                            </form>
+                        </div>
+                    </div>
+                    <form action="/task/{{ task.id }}/status" method="post">
+                        <select name="status" class="status-select" onchange="this.form.submit()">
+                            <option value="pending" selected>⏳ Ожидает</option>
+                            <option value="in-progress">⚡ В работу</option>
+                            <option value="completed">✅ Готово</option>
+                        </select>
+                    </form>
+                </div>
+                {% else %}
+                <div class="empty-state">✨ Пусто</div>
+                {% endfor %}
+            </div>
+            
+            <div class="column">
+                <div class="column-header progress">⚡ В работе</div>
+                {% for task in tasks if task.status == 'in-progress' %}
+                <div class="task-card">
+                    <div class="task-title">{{ task.title }}</div>
+                    <div class="task-desc">{{ task.description or '—' }}</div>
+                    <div class="task-meta">
+                        <span class="priority {{ task.priority }}">
+                            {% if task.priority == 'high' %}🔴 Высокий
+                            {% elif task.priority == 'medium' %}🟠 Средний
+                            {% else %}🟢 Низкий{% endif %}
+                        </span>
+                        <div class="task-actions">
+                            <a href="/task/{{ task.id }}/edit" class="btn-icon btn-edit">✏️</a>
+                            <form action="/task/{{ task.id }}/delete" method="post" style="display: inline;">
+                                <button type="submit" class="btn-icon btn-delete" onclick="return confirm('Удалить?')">🗑️</button>
+                            </form>
+                        </div>
+                    </div>
+                    <form action="/task/{{ task.id }}/status" method="post">
+                        <select name="status" class="status-select" onchange="this.form.submit()">
+                            <option value="pending">⏳ Ожидает</option>
+                            <option value="in-progress" selected>⚡ В работу</option>
+                            <option value="completed">✅ Готово</option>
+                        </select>
+                    </form>
+                </div>
+                {% else %}
+                <div class="empty-state">✨ Пусто</div>
+                {% endfor %}
+            </div>
+            
+            <div class="column">
+                <div class="column-header completed">✅ Завершено</div>
+                {% for task in tasks if task.status == 'completed' %}
+                <div class="task-card">
+                    <div class="task-title">{{ task.title }}</div>
+                    <div class="task-desc">{{ task.description or '—' }}</div>
+                    <div class="task-meta">
+                        <span class="priority {{ task.priority }}">
+                            {% if task.priority == 'high' %}🔴 Высокий
+                            {% elif task.priority == 'medium' %}🟠 Средний
+                            {% else %}🟢 Низкий{% endif %}
+                        </span>
+                        <div class="task-actions">
+                            <a href="/task/{{ task.id }}/edit" class="btn-icon btn-edit">✏️</a>
+                            <form action="/task/{{ task.id }}/delete" method="post" style="display: inline;">
+                                <button type="submit" class="btn-icon btn-delete" onclick="return confirm('Удалить?')">🗑️</button>
+                            </form>
+                        </div>
+                    </div>
+                    <form action="/task/{{ task.id }}/status" method="post">
+                        <select name="status" class="status-select" onchange="this.form.submit()">
+                            <option value="pending">⏳ Ожидает</option>
+                            <option value="in-progress">⚡ В работу</option>
+                            <option value="completed" selected>✅ Готово</option>
+                        </select>
+                    </form>
+                </div>
+                {% else %}
+                <div class="empty-state">✨ Пусто</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    {% if edit_task %}
+    <div class="modal active">
+        <div class="modal-content">
+            <h3>✏️ Редактировать</h3>
+            <form action="/task/{{ edit_task.id }}/update" method="post">
+                <input type="text" name="title" value="{{ edit_task.title }}" required>
+                <input type="text" name="description" value="{{ edit_task.description or '' }}">
+                <select name="priority">
+                    <option value="low" {% if edit_task.priority == 'low' %}selected{% endif %}>🟢 Низкий</option>
+                    <option value="medium" {% if edit_task.priority == 'medium' %}selected{% endif %}>🟠 Средний</option>
+                    <option value="high" {% if edit_task.priority == 'high' %}selected{% endif %}>🔴 Высокий</option>
+                </select>
+                <div class="modal-actions">
+                    <a href="/board" class="btn-icon btn-edit" style="text-decoration: none;">Отмена</a>
+                    <button type="submit" class="btn-primary">Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+</body>
+</html>
